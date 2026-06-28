@@ -21,6 +21,7 @@ export const OrgIdURLSchema = z
   });
 
 export type OrgId = z.output<typeof OrgIdURLSchema>;
+
 // solidity/ web3 types
 export const EMPTY_BYTES32 =
   "0x0000000000000000000000000000000000000000000000000000000000000000";
@@ -68,3 +69,36 @@ export type NonceResponseType =
       success: false;
       error: "missing_account";
     };
+
+// Election Types:
+
+export type ElectionInfo = [
+  startTime: bigint,
+  endTime: bigint,
+  electionId: bigint,
+  name: string,
+  description: string,
+];
+
+export interface Candidate {
+  candidateId: bigint;
+  name: string;
+  description: string;
+}
+
+export type ElectionDetails = {
+  hasVoted: boolean;
+  owner: Address;
+  createdAt: Date;
+  isResultDeclared: boolean;
+  isAccountInWhiteList: boolean;
+  winnersList: number[] | null;
+  isPrivate: boolean;
+  id: number;
+  startTime: Date;
+  endTime: Date;
+  name: string;
+  desc: string;
+  address: Address;
+  candidateList: Candidate[];
+};

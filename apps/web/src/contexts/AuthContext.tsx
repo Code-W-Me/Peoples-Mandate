@@ -27,7 +27,6 @@ import {
 } from "viem";
 
 interface AuthContext {
-  walletClient: WalletClient | null;
   siwe: () => Promise<void>;
   progress: string | null;
   isSiweAuth: boolean;
@@ -40,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState<string | null>(null);
   const [isSiweAuth, setIsSiweAuth] = useState<boolean>(false);
   const [profileId, setProfileId] = useState<Bytes32 | null>(null);
-  const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
   const { activeAccount, providerNotFound } = useWallet();
 
   const isSigningIn = useRef(false);
@@ -135,14 +133,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         account: activeAccount,
         message: preparedMessage,
       });
-      setWalletClient(walletClient);
       setProgress("Verifying signature with server...");
       socket.emit("siwe:verify", {
         message: preparedMessage,
         signature,
       });
     } catch (error) {
-      setWalletClient(null);
       setProgress(null);
       console.error("SIWE flow execution aborted:", error);
     } finally {
@@ -157,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success) {
         if (response.token) {
           sessionStorage.setItem("siwe_session", response.token);
+          setProgress(null);
           setIsSiweAuth(true);
         }
 
@@ -165,8 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setProgress(null);
         }
       } else {
-        setWalletClient(null);
-
         if (
           response.error === "missing_token" ||
           response.error === "expired_token"
@@ -184,13 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [socket]);
 
-  useEffect(() => {
-    if (!activeAccount) return;
-    siwe();
-  }, [activeAccount]);
-
   const contextValues: AuthContext = {
-    walletClient,
     siwe,
     progress,
     isSiweAuth,

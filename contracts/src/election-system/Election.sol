@@ -21,6 +21,7 @@ contract Election is Initializable {
     error Election_NotOwner();
     error Election_InvalidVoteArrayLength();
     error Election_UserHasAlreadyVoted();
+    error Election_PrivateElection();
     error Election_VotesUnavailable();
     error Election_BallotIsNotIntialized();
     error Election_ElectionInactive();
@@ -57,6 +58,7 @@ contract Election is Initializable {
 
     // state variables
 
+    mapping(address => bool) internal isVoted;
     mapping(uint256 => bool) internal nullifierHashes;
     mapping(address => bool) public isWhitelisted;
 
@@ -66,6 +68,7 @@ contract Election is Initializable {
     ElectionInfo public electionInfo;
     Candidate[] private candidates;
 
+    uint256 public createdAt;
     address public factoryContractAddress;
     address public owner;
 
@@ -74,7 +77,7 @@ contract Election is Initializable {
     uint8 public resultType;
     uint256 public totalVoters;
 
-    bool private isPrivate;
+    bool public isPrivate;
     bool private isElectionEnded;
     bool private isResultsDeclared;
     bool private isBallotInitialized;
@@ -123,6 +126,7 @@ contract Election is Initializable {
         for (uint256 i = 0; i < _candidates.length; i++) {
             candidates.push(Candidate(i, _candidates[i].name, _candidates[i].description));
         }
+        createdAt = block.timestamp;
         resultType = _resultType;
         electionId = _electionInfo.electionId;
         owner = _owner;
@@ -132,17 +136,18 @@ contract Election is Initializable {
     }
 
     // core functions
-    function userVote(uint256[] memory voteArr, uint256 nullifierHash)
-        external
-        electionInactiveCheck
-        electionEndedCheck
-    {
+    function userVote(uint256[] memory voteArr) external electionInactiveCheck electionEndedCheck {
         if (voteArr.length > candidates.length) revert Election_InvalidVoteArrayLength();
-        if (nullifierHashes[nullifierHash]) {
+        if (isVoted[msg.sender] == true) {
             revert Election_UserHasAlreadyVoted();
         }
+        if (isPrivate == true) {
+            if (isWhitelisted[msg.sender] != true) {
+                revert Election_PrivateElection();
+            }
+        }
 
-        nullifierHashes[nullifierHash] = true;
+        // nullifierHashes[nullifierHash] = true;
 
         if (isBallotInitialized == false) {
             ballot.init(candidates.length);
@@ -252,5 +257,9 @@ contract Election is Initializable {
 
     function getIsResultsDeclared() external view returns (bool) {
         return isResultsDeclared;
+    }
+
+    function hasVoted(address account) external view returns (bool) {
+        return isVoted[account];
     }
 }

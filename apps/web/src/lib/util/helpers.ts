@@ -1,3 +1,5 @@
+import { AddressSchema } from "@repo/shared";
+
 export const bigintToDateWithTimeStamp = (rawTimeStamp: bigint) => {
   return new Date(Number(rawTimeStamp) * 1000);
 };
@@ -5,6 +7,10 @@ export const bigintToDateWithTimeStamp = (rawTimeStamp: bigint) => {
 export const bigIntToIsoDate = (rawTimeStamp: bigint) => {
   const date = new Date(Number(rawTimeStamp) * 1000);
   return date.toISOString().split("T")[0];
+};
+
+export const stringToBigInt = (timeString: string) => {
+  return Math.floor(new Date(timeString).getTime() / 1000);
 };
 
 /**
@@ -39,4 +45,19 @@ export function slicer(
     }
   }
   return data;
+}
+
+export function validAddressCheck(address: string | undefined) {
+  const result = AddressSchema.safeParse(address);
+  if (address === "" || !address) {
+    return `Enter Account address`;
+  } else if (!address.startsWith("0x")) {
+    return `Address must begin with "0x..."`;
+  } else if (address.length !== 42) {
+    return `Address Must be 42 characters long`;
+  } else if (!result.success) {
+    return `Invalid characters in Address detected!`;
+  } else {
+    return "valid";
+  }
 }

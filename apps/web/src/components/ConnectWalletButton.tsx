@@ -40,40 +40,34 @@ export default function ConnectWalletButton() {
       Connect Wallet
     </Button>
   ) : (
-    <div className="flex flex-row gap-x-2 *:px-2 *:border-orange-700/80">
-      <div className="h-full w-full flex flex-row gap-x-2 items-center py-2 border-2 rounded-l-lg bg-orange-50 font-sans font-bold text-lg text-orange-700">
-        <div className="px-2">
-          <p>
-            {isSiweAuth && !progress ? (
-              <>
-                <span className="text-green-800">Connected:</span>
-                {defaultChain.name}({defaultChain.id})
-              </>
-            ) : (
-              <>{progress}</>
-            )}
-          </p>
-          <p>
-            <HashBadge
-              hash={activeAccount}
-              custom={15}
-              style="font-sans text-xl"
-            />
-          </p>
-        </div>
-        {!profileId && !progress && (
-          <>
-            <div className="border rounded-full h-17"></div>
-            <Button className={buttonStyle}>Complete Log In</Button>
-          </>
-        )}
+    <div className=" flex flex-row gap-x-2 items-center py-2 border-2 rounded-lg bg-orange-50 font-sans font-bold text-lg text-orange-700">
+      <div className="px-2">
+        <p>
+          {isSiweAuth && !progress ? (
+            <>
+              <span className="text-green-800 font-mono">connected: </span>
+              {defaultChain.name}({defaultChain.id})
+            </>
+          ) : (
+            <>{progress}</>
+          )}
+        </p>
+        <p>
+          <HashBadge
+            hash={activeAccount}
+            custom={20}
+            style="font-sans text-xl"
+          />
+        </p>
       </div>
-      <Button
-        className={`rounded-r-lg bg-orange-50 border-2 border-orange-700 font-bold text-sm text-red-500
-        hover:bg-red-500 hover:text-white`}
-      >
-        X
-      </Button>
+      {!profileId && !progress && (
+        <>
+          <div className="border rounded-full h-17"></div>
+          <Button className={buttonStyle} onClick={() => handleLoginClick()}>
+            Complete Log In
+          </Button>
+        </>
+      )}
     </div>
   );
 }

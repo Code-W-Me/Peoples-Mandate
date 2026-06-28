@@ -8,7 +8,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { type Address, type EIP1193Provider } from "viem";
+import {
+  createWalletClient,
+  custom,
+  WalletClient,
+  type Address,
+  type EIP1193Provider,
+} from "viem";
 import { defaultChain } from "@repo/shared";
 
 declare global {
@@ -18,6 +24,7 @@ declare global {
 }
 
 interface WalletContextType {
+  walletClient: WalletClient | null;
   activeAccount: Address | null;
   isConnecting: boolean;
   providerNotFound: boolean;
@@ -29,6 +36,7 @@ const WalletContext = createContext<WalletContextType | null>(null);
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [activeAccount, setActiveAccount] = useState<Address | null>(null);
+  const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
   const [isConnecting, setIsConnecting] = useState<boolean>(true);
   const [isUnsupportedChain, setIsUnsupportedChain] = useState<boolean>(false);
   const [providerNotFound, setProviderNotFound] = useState<boolean>(false);
@@ -64,6 +72,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         method: "eth_requestAccounts",
       });
 
+      const _walletClient = createWalletClient({
+        account: _accounts[0],
+        chain: defaultChain,
+        transport: custom(window.ethereum!),
+      });
+
+      setWalletClient(_walletClient);
       setActiveAccount(_accounts[0]);
       setIsUnsupportedChain(false);
       setIsConnecting(false);
@@ -105,6 +120,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }
 
   const contextValues: WalletContextType = {
+    walletClient,
     activeAccount: activeAccount,
     isConnecting,
     isUnsupportedChain,

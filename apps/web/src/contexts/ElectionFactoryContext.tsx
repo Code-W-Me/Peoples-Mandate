@@ -1,16 +1,37 @@
 "use client";
 
-import { Address, OrgIdURLSchema } from "@repo/shared";
-import { createContext, ReactNode, useMemo, useState } from "react";
+import {
+  Address,
+  electionFactoryAbi,
+  OrgIdURLSchema,
+  orgRegistryAbi,
+  orgRegistryAddress,
+  publicClient,
+} from "@repo/shared";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { zeroAddress } from "viem";
 
 interface OrgInfo {
   orgName: string | null;
   orgAddress: Address | null;
 }
 
-interface EvidenceFactoryContextType extends OrgInfo {}
+interface ElectionFactoryContextType extends OrgInfo {
+  isCreator: boolean;
+  isAdmin: boolean;
+  publicElections: Address[];
+  privateElections: Address[];
+  error: string;
+}
 
-const EvidenceFactoryContext = createContext<EvidenceFactoryContextType | null>(
+const ElectionFactoryContext = createContext<ElectionFactoryContextType | null>(
   null,
 );
 
@@ -21,7 +42,16 @@ export function ElectionFactoryProvider({
   children: ReactNode;
   orgIdUrl: string;
 }) {
-  const [ledgerError, setLedgerError] = useState<string | null>(null);
+  const [contextError, setContextError] = useState<string | null>(null);
+  const [isCreator, setIsCreator] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [elections, setElections] = useState<{
+    public: Address[];
+    private: Address[];
+  }>({
+    public: [],
+    private: [],
+  });
   const [orgInfo, setOrgInfo] = useState<OrgInfo>({
     orgName: null,
     orgAddress: null,
@@ -30,23 +60,95 @@ export function ElectionFactoryProvider({
   const orgIdParsed = useMemo(() => {
     const parsed = OrgIdURLSchema.safeParse(orgIdUrl);
     if (!parsed.success) {
-      setLedgerError("Error: Invalid Ledger ID");
       return null;
     }
     return { ...parsed.data };
   }, [orgIdUrl]);
 
-  if (!orgIdParsed) {
-    return <div>Invalid Org Id</div>;
-  }
-  const contextValues: EvidenceFactoryContextType = {
-    orgName: orgIdParsed.orgName,
-    orgAddress: orgIdParsed.address,
+  useEffect(() => {
+    if (!orgIdParsed) {
+      setContextError("Error: Invalid Ledger ID in Url");
+      return;
+    }
+
+    const validateFactory = async () => {
+      try {
+        const factoryAddress = orgIdParsed.address;
+        const _orgAdmin = await publicClient.readContract({
+          abi: orgRegistryAbi,
+          address: orgRegistryAddress,
+          functionName: "getOrgAdmin",
+          args: [factoryAddress],
+        });
+        const _orgName = await publicClient.readContract({
+          abi: orgRegistryAbi,
+          address: orgRegistryAddress,
+          functionName: "getOrgName",
+          args: [factoryAddress],
+        });
+        console.log("Factory context: orgname and admin", _orgName, _orgAdmin);
+        if (
+          !_orgAdmin ||
+          _orgAdmin === zeroAddress
+          // ||
+          // _orgName !== orgIdParsed.orgName
+        ) {
+          setContextError("Election Factory Not found on chain");
+          return;
+        }
+
+        setOrgInfo({
+          orgName: orgIdParsed.orgName, //change this later
+          orgAddress: orgIdParsed.address,
+        });
+
+        // const publicElections = (await publicClient.readContract({
+        //   address: factoryAddress,
+        //   abi: electionFactoryAbi,
+        //   functionName: "publicElections",
+        // })) as Address[];
+
+        // // check if the account is whitelisted, and keep only those ones
+        // const privateElections = (await publicClient.readContract({
+        //   address: factoryAddress,
+        //   abi: electionFactoryAbi,
+        //   functionName: "privateElections",
+        // })) as Address[];
+
+        // setElections({
+        //   public: publicElections,
+        //   private: privateElections,
+        // });
+      } catch (err) {
+        console.error("Election factory context error", err);
+        setContextError("unknown error occured");
+      }
+    };
+
+    validateFactory();
+  }, [orgIdParsed]);
+
+  const contextValues: ElectionFactoryContextType = {
+    isCreator,
+    isAdmin,
+    publicElections: elections.public,
+    privateElections: elections.private,
+    error: contextError || "",
+    orgName: orgInfo.orgName,
+    orgAddress: orgInfo.orgAddress,
   };
 
   return (
-    <EvidenceFactoryContext.Provider value={contextValues}>
+    <ElectionFactoryContext.Provider value={contextValues}>
       {children}
-    </EvidenceFactoryContext.Provider>
+    </ElectionFactoryContext.Provider>
   );
+}
+
+export function useFactory() {
+  const context = useContext(ElectionFactoryContext);
+  if (!context) {
+    throw new Error("factory: context must be used within a provider");
+  }
+  return context;
 }

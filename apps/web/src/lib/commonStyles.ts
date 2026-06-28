@@ -1,2 +1,4 @@
 export const pageHeadingStyle =
-  "absolute top-30 py-4 px-3 flex flex-col bg-orange-500/80 rounded-r-lg text-4xl text-white";
+  "bg-orange-600/80 rounded-lg px-2 py-1 text-4xl text-white";
+
+export const nothingToShowStyle = "text-start font-mono text-orange-700/80";
