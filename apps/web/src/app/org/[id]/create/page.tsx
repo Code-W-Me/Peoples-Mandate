@@ -74,6 +74,10 @@ export default function CreateElection() {
 
   const [isPrivate, setisPrivate] = useState<boolean>(false);
 
+  const areCandidatesValid = candidates.every(
+    (candidate) => candidate.name.trim() !== "" && candidate.desc.trim() !== "",
+  );
+
   async function handleElectionCreation() {
     setIsDeploying(true);
     setError(null);
@@ -100,10 +104,6 @@ export default function CreateElection() {
       alert("You must have at least 2 candidates to create an election.");
       return;
     }
-    const areCandidatesValid = candidates.every(
-      (candidate) =>
-        candidate.name.trim() !== "" && candidate.desc.trim() !== "",
-    );
 
     if (!areCandidatesValid) {
       alert("Please fill out the name and description for all candidates.");
@@ -183,7 +183,7 @@ export default function CreateElection() {
   const _endTime = endTime && new Date(endTime);
 
   const isValidPeriod =
-    _startTime && _startTime < new Date() && _endTime && _startTime < _endTime;
+    _startTime && _startTime > new Date() && _endTime && _startTime < _endTime;
 
   // todo ballot and result types
   return (
@@ -510,7 +510,8 @@ export default function CreateElection() {
                     !isValidPeriod ||
                     !elName ||
                     !!txHash ||
-                    candidates.length < 2
+                    candidates.length < 2 ||
+                    !areCandidatesValid
                   }
                   isLoading={isDeploying}
                 >

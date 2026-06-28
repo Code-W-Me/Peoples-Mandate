@@ -78,7 +78,7 @@ contract Election is Initializable {
     uint256 public totalVoters;
 
     bool public isPrivate;
-    bool private isElectionEnded;
+    bool public isElectionEnded;
     bool private isResultsDeclared;
     bool private isBallotInitialized;
 
@@ -147,7 +147,7 @@ contract Election is Initializable {
             }
         }
 
-        // nullifierHashes[nullifierHash] = true;
+        isVoted[msg.sender] = true;
 
         if (isBallotInitialized == false) {
             ballot.init(candidates.length);

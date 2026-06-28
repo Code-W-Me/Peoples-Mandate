@@ -111,7 +111,6 @@ export default function useFetchSingleElection(address: Address) {
           })) as number[];
         }
 
-        console.log(electionInfoRaw);
         setElectionDetails({
           hasVoted,
           owner: owner,
